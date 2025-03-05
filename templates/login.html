@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"> <!-- Définit l'encodage des caractères pour supporter les caractères spéciaux -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Permet d'adapter l'affichage aux écrans mobiles -->
     <title>Connexion</title>
+    
     <style>
+        /* Style global du corps de la page */
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial, sans-serif; /* Police de caractère standard */
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(to right, #2c3e50, #4ca1af);
+            justify-content: center; /* Centre horizontalement */
+            align-items: center; /* Centre verticalement */
+            height: 100vh; /* Hauteur de l'écran complet */
+            background: linear-gradient(to right, #2c3e50, #4ca1af); /* Dégradé de fond */
             flex-direction: column;
         }
+
+        /* Conteneur du formulaire de connexion */
         .login-container {
-            background: #fff;
+            background: #fff; /* Fond blanc */
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 12px; /* Coins arrondis */
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2); /* Ombre douce */
             width: 340px;
             text-align: center;
             display: flex;
@@ -26,30 +30,40 @@
             justify-content: center;
             align-items: center;
         }
+
+        /* Style du titre */
         h2 {
             margin-bottom: 20px;
             color: #2c3e50;
             font-size: 1.5em;
         }
+
+        /* Style du formulaire */
         form {
             width: 100%;
         }
+
+        /* Style des étiquettes (labels) */
         label {
-            display: block;
+            display: block; /* Place les labels sur leur propre ligne */
             margin-bottom: 8px;
             text-align: left;
             font-size: 14px;
         }
+
+        /* Style des champs de saisie */
         input {
             display: block;
             width: 100%;
-            box-sizing: border-box; /* Ajouté pour garantir la largeur exacte */
+            box-sizing: border-box; /* Assure que padding et border ne changent pas la largeur */
             margin: 12px 0;
             padding: 12px;
             border: 1px solid #ccc;
-            border-radius: 6px;
+            border-radius: 6px; /* Coins arrondis */
             font-size: 16px;
         }
+
+        /* Style du bouton de connexion */
         button {
             background-color: #3498db;
             color: white;
@@ -59,11 +73,15 @@
             border-radius: 6px;
             font-size: 16px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.3s; /* Effet de transition */
         }
+
+        /* Effet au survol du bouton */
         button:hover {
             background-color: #2980b9;
         }
+
+        /* Conteneur du message d'information */
         .info-message {
             margin-top: 20px;
             padding: 20px;
@@ -73,37 +91,51 @@
             text-align: center;
             max-width: 340px;
         }
+
+        /* Style du texte à l'intérieur du message d'information */
         .info-message p {
             font-size: 14px;
             color: #555;
-            line-height: 1.6;
+            line-height: 1.6; /* Espacement entre les lignes */
         }
+
+        /* Mise en valeur du texte important */
         .info-message strong {
             color: #3498db;
         }
     </style>
 </head>
 <body>
+
+    <!-- Conteneur du formulaire de connexion -->
     <div class="login-container">
-        <h2>Connexion</h2>
+        <h2>Connexion</h2> <!-- Titre de la section connexion -->
+
+        <!-- Formulaire de connexion -->
         <form action="/login" method="post">
+            <!-- Champ pour le nom d'utilisateur -->
             <label for="username">Nom d'utilisateur :</label>
             <input type="text" id="username" name="username" required>
-            
+
+            <!-- Champ pour le mot de passe -->
             <label for="password">Mot de passe :</label>
             <input type="password" id="password" name="password" required>
-            
+
+            <!-- Bouton de connexion -->
             <button type="submit">Se connecter</button>
         </form>
     </div>
 
+    <!-- Message d'information sur la demande d'accès -->
     <div class="info-message">
         <p>Pour obtenir un profil, veuillez contacter le service informatique à l'adresse :</p>
         <p><strong>info.example@example.com</strong></p>
+
         <p>Envoyez un email avec :</p>
         <p><strong>Objet :</strong> Accès données Thingy</p>
         <p><strong>Corps :</strong></p>
         <p>Nom<br>Prénom<br>Adresse mail de contact<br>Service concerné</p>
     </div>
+
 </body>
 </html>
