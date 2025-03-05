@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"> <!-- Définit l'encodage des caractères en UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Rend la page responsive -->
     <title>Données en temps réel</title>
+
+    <!-- Inclusion de jQuery pour faciliter les requêtes AJAX -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Inclusion de Chart.js pour les graphiques -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
-        let chartConfigs = {};
-        let labels = [];  // Ceci est fixe, on n'y touche plus après l'ajout initial
-        let datasets = {
+        let chartConfigs = {}; // Stocke les configurations des graphiques
+        let labels = [];  // Liste des horodatages, fixe après ajout initial
+        let datasets = { // Définit les jeux de données pour chaque type de mesure et leurs caractéristiques (nom, couleur)
             x: { label: "Accélération X", borderColor: "red", data: [] },
             y: { label: "Accélération Y", borderColor: "green", data: [] },
             z: { label: "Accélération Z", borderColor: "blue", data: [] },
@@ -17,70 +21,72 @@
             pression: { label: "Pression", borderColor: "purple", data: [] },
             humidite: { label: "Humidité", borderColor: "cyan", data: [] }
         };
-    
+
+        // Indique si l'horodatage a déjà été mis à jour pour chaque donnée
         let timestampsUpdated = { x: false, y: false, z: false, temp: false, pression: false, humidite: false };
 
-function fetchData() {
-    $.ajax({
-        url: '/get_data',
-        type: 'GET',
-        success: function(response) {
-            if (!response.data || response.data.length === 0) return;
-            let lastData = response.data[response.data.length - 1];
-            let regex = {
-                x: /x\s+=\s+(-?\d+\.\d+)\s+m\/s\^2/,
-                y: /y\s+=\s+(-?\d+\.\d+)\s+m\/s\^2/,
-                z: /z\s+=\s+(-?\d+\.\d+)\s+m\/s\^2/,
-                temp: /T: (-?\d+\.\d+) °C/,
-                pression: /P: (-?\d+\.\d+) kPa/,
-                humidite: /H: (-?\d+\.\d+) %RH/
-            };
+        function fetchData() {
+            $.ajax({
+                url: '/get_data', // Requête vers le serveur Flask pour récupérer les données
+                type: 'GET',
+                success: function(response) {
+                    if (!response.data || response.data.length === 0) return; // Vérifie si les données sont valides
 
-            // Utiliser Date.now() pour obtenir un horodatage en millisecondes
-            let time = new Date();
-            let formattedTime = time.toTimeString().split(' ')[0]; // HH:MM:SS
+                    let lastData = response.data[response.data.length - 1]; // Prend la dernière valeur reçue
 
-            // Ajouter le temps seulement si il n'est pas déjà ajouté
-            if (labels.length === 0 || labels[labels.length - 1] !== formattedTime) {
-                labels.push(formattedTime); // Ajouter l'heure une fois, et seulement si elle est différente
-                if (labels.length > 20) labels.shift(); // Limiter à 20 valeurs
-            }
+                    // Expressions régulières pour extraire les valeurs des données brutes (à changer en fonction des données envoyés, ici = spécifique au Thingy:91 et à un format d'envoi choisi par l'utilisateur)
+                    let regex = {
+                        x: /x\s+=\s+(-?\d+\.\d+)\s+m\/s\^2/,
+                        y: /y\s+=\s+(-?\d+\.\d+)\s+m\/s\^2/,
+                        z: /z\s+=\s+(-?\d+\.\d+)\s+m\/s\^2/,
+                        temp: /T: (-?\d+\.\d+) °C/,
+                        pression: /P: (-?\d+\.\d+) kPa/,
+                        humidite: /H: (-?\d+\.\d+) %RH/
+                    };
 
-            // Ajouter les nouvelles données sans modifier les anciennes
-            for (let key in regex) {
-                let match = lastData.match(regex[key]);
-                if (match) {
-                    $('#' + key).text(match[1]);
-                    let value = parseFloat(match[1]);
+                    let time = new Date(); // Obtient l'heure actuelle
+                    let formattedTime = time.toTimeString().split(' ')[0]; // Formate l'heure en HH:MM:SS
 
-                    // Mettre à jour l'horodatage sous chaque graphique, si ce n'est pas déjà fait
-                    if (!timestampsUpdated[key]) {
-                        $(`#${key}Timestamp`).text('Dernière mise à jour : ' + formattedTime);
-                        timestampsUpdated[key] = true; // Marquer l'horodatage comme mis à jour
+                    // Ajoute l'horodatage si c'est un nouveau
+                    if (labels.length === 0 || labels[labels.length - 1] !== formattedTime) {
+                        labels.push(formattedTime);
+                        if (labels.length > 20) labels.shift(); // Limite l'affichage aux 20 dernières valeurs
                     }
 
-                    if (key === 'humidite') {
-                        if (lastHumidite !== value) {
-                            datasets[key].data.push(value);
-                            if (datasets[key].data.length > 20) datasets[key].data.shift();
-                            chartConfigs[key].update();
+                    // Parcourt les différents types de données à extraire
+                    for (let key in regex) {
+                        let match = lastData.match(regex[key]); // Applique la regex à la donnée brute
+                        if (match) {
+                            $('#' + key).text(match[1]); // Met à jour l'affichage des valeurs
+                            let value = parseFloat(match[1]); // Convertit en nombre flottant
+
+                            // Mise à jour de l'horodatage sous le graphique si pas encore fait
+                            if (!timestampsUpdated[key]) {
+                                $(`#${key}Timestamp`).text('Dernière mise à jour : ' + formattedTime);
+                                timestampsUpdated[key] = true;
+                            }
+
+                            // Cas particulier pour l'humidité avec vérification de changement
+                            if (key === 'humidite') {
+                                if (lastHumidite !== value) {
+                                    datasets[key].data.push(value);
+                                    if (datasets[key].data.length > 20) datasets[key].data.shift(); // Garde uniquement les 20 dernières valeurs
+                                    chartConfigs[key].update(); // Rafraîchit le graphique
+                                }
+                                lastHumidite = value;
+                            } else {
+                                datasets[key].data.push(value);
+                                if (datasets[key].data.length > 20) datasets[key].data.shift();
+                                chartConfigs[key].update();
+                            }
                         }
-                        lastHumidite = value; // Mise à jour de la dernière valeur d'humidité
-                    } else {
-                        datasets[key].data.push(value);
-                        if (datasets[key].data.length > 20) datasets[key].data.shift();
-                        chartConfigs[key].update();
                     }
                 }
-            }
+            });
         }
-    });
-}
 
-
-    
         $(document).ready(() => {
-            // Initialiser les graphiques avec les labels et datasets
+            // Initialise les graphiques pour chaque type de données
             ['x', 'y', 'z', 'temp', 'pression', 'humidite'].forEach(key => {
                 let ctx = document.getElementById(`${key}Chart`).getContext('2d');
                 chartConfigs[key] = new Chart(ctx, {
@@ -89,11 +95,12 @@ function fetchData() {
                     options: { responsive: true, maintainAspectRatio: false }
                 });
             });
-            setInterval(fetchData, 1000); // Mettre à jour les données toutes les secondes
+
+            // Rafraîchit les données toutes les secondes
+            setInterval(fetchData, 1000);
         });
     </script>
-    
-    
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -105,7 +112,7 @@ function fetchData() {
         }
         .container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Disposition flexible */
             gap: 15px;
             padding: 20px;
             width: 80%;
@@ -118,7 +125,16 @@ function fetchData() {
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
-        h1 { font-size: 1.5em; color: #333; margin: 20px 0; }
+        .chart-container {
+            width: 80%;
+            max-width: 800px;
+            height: 300px;
+            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
         .download-btn {
             background: #007bff;
             color: white;
@@ -130,21 +146,12 @@ function fetchData() {
             cursor: pointer;
             transition: background 0.3s;
         }
-        .chart-container {
-            width: 80%;
-            max-width: 800px;
-            height: 300px;
-            margin-top: 20px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        }
     </style>
 </head>
 <body>
     <h1>Données en temps réel</h1>
     <div class="container">
+        <!-- Affichage des dernières valeurs reçues -->
         <div class="box">Accélération X: <span id="x">...</span> m/s²</div>
         <div class="box">Accélération Y: <span id="y">...</span> m/s²</div>
         <div class="box">Accélération Z: <span id="z">...</span> m/s²</div>
@@ -152,32 +159,17 @@ function fetchData() {
         <div class="box">Pression: <span id="pression">...</span> kPa</div>
         <div class="box">Humidité: <span id="humidite">...</span> %RH</div>
     </div>
+
+    <!-- Bouton de téléchargement des données -->
     <a href="/download" class="download-btn">Télécharger les données</a>
-    
-    <div class="chart-container">
-        <canvas id="xChart"></canvas>
-        <p id="xTimestamp"></p>
-    </div>
-    <div class="chart-container">
-        <canvas id="yChart"></canvas>
-        <p id="yTimestamp"></p>
-    </div>
-    <div class="chart-container">
-        <canvas id="zChart"></canvas>
-        <p id="zTimestamp"></p>
-    </div>
-    <div class="chart-container">
-        <canvas id="tempChart"></canvas>
-        <p id="tempTimestamp"></p>
-    </div>
-    <div class="chart-container">
-        <canvas id="pressionChart"></canvas>
-        <p id="pressionTimestamp"></p>
-    </div>
-    <div class="chart-container">
-        <canvas id="humiditeChart"></canvas>
-        <p id="humiditeTimestamp"></p>
-    </div>
-    
+
+    <!-- Conteneurs des graphiques -->
+    <div class="chart-container"><canvas id="xChart"></canvas><p id="xTimestamp"></p></div>
+    <div class="chart-container"><canvas id="yChart"></canvas><p id="yTimestamp"></p></div>
+    <div class="chart-container"><canvas id="zChart"></canvas><p id="zTimestamp"></p></div>
+    <div class="chart-container"><canvas id="tempChart"></canvas><p id="tempTimestamp"></p></div>
+    <div class="chart-container"><canvas id="pressionChart"></canvas><p id="pressionTimestamp"></p></div>
+    <div class="chart-container"><canvas id="humiditeChart"></canvas><p id="humiditeTimestamp"></p></div>
+
 </body>
 </html>
